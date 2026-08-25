@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient, queryOptions } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   Download,
@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 
 import { checkDomainMetrics, type DomainMetrics } from "@/lib/metrics.functions";
+import {
+  clearDomainChecks,
+  listDomainChecks,
+  saveDomainCheck,
+} from "@/lib/history.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -24,6 +30,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+
+const historyQueryOptions = queryOptions({
+  queryKey: ["domain-checks"],
+  queryFn: () => listDomainChecks(),
+});
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
