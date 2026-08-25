@@ -37,13 +37,8 @@ function toMetrics(row: Row): DomainMetrics {
 
 export const listDomainChecks = createServerFn({ method: "GET" }).handler(
   async (): Promise<DomainMetrics[]> => {
-    const { createClient } = await import("@supabase/supabase-js");
-    const supabase = createClient(
-      process.env["SUPABASE_URL"]!,
-      process.env["SUPABASE_PUBLISHABLE_KEY"]!,
-      { auth: { persistSession: false, autoRefreshToken: false } },
-    );
-    const { data, error } = await supabase
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data, error } = await supabaseAdmin
       .from("domain_checks")
       .select(
         "domain, domain_authority, backlinks, referring_domains, dofollow_backlinks, dofollow_ref_domains, checked_at",
@@ -57,6 +52,7 @@ export const listDomainChecks = createServerFn({ method: "GET" }).handler(
     return (data as Row[]).map(toMetrics);
   },
 );
+
 
 export const saveDomainCheck = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) => metricsSchema.parse(data))
