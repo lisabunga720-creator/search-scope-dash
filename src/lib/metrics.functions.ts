@@ -11,17 +11,6 @@ export type DomainMetrics = {
   checkedAt: string;
 };
 
-// Deterministic pseudo-metrics derived from the domain string.
-// Swap this handler body for a live backlink API when credentials are available.
-function hash(input: string): number {
-  let h = 2166136261;
-  for (let i = 0; i < input.length; i++) {
-    h ^= input.charCodeAt(i);
-    h = Math.imul(h, 16777619);
-  }
-  return Math.abs(h);
-}
-
 export const checkDomainMetrics = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
@@ -44,15 +33,29 @@ export const checkDomainMetrics = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }): Promise<DomainMetrics> => {
-    const h = hash(data.domain);
-    const da = h % 92;
+    // Panggil Supabase Edge Function yang sudah Anda deploy ke project tzbcvsbzoyexslhisovk
+    const response = await fetch("https://tzbcvsbzoyexslhisovk.supabase.co/functions/v1/check-da", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ domain: data.domain }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Gagal mengambil data Domain Authority dari server.");
+    }
+
+    // Mengembalikan data hasil nyata dari Moz API melalui Supabase Edge Function
     return {
-      domain: data.domain,
-      domainAuthority: da,
-      backlinks: (h % 987654) * (1 + (da % 7)) + 120,
-      referringDomains: (h % 4321) + 12,
-      spamScore: h % 18,
-      organicKeywords: (h % 76543) + 40,
+      domain: result.domain,
+      domainAuthority: result.da ?? 0,
+      backlinks: 0,         // Placeholder jika API Moz v2 tidak mengembalikan field ini secara langsung
+      referringDomains: 0,  // Placeholder
+      spamScore: 0,         // Placeholder
+      organicKeywords: 0,   // Placeholder
       checkedAt: new Date().toISOString(),
     };
   });
