@@ -38,6 +38,7 @@ const historyQueryOptions = queryOptions({
 
 
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(historyQueryOptions),
   head: () => ({
     meta: [
       { title: "Backlink Research Dashboard | Domain Authority Checker" },
