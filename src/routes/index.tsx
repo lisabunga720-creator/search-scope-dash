@@ -310,9 +310,9 @@ function Dashboard() {
       <section className="panel mt-6 rounded-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 md:px-6">
           <div>
-            <h2 className="text-lg font-semibold">Session history</h2>
+            <h2 className="text-lg font-semibold">Saved history</h2>
             <p className="text-xs text-muted-foreground">
-              Every domain checked in this session, newest first.
+              Every domain checked, stored in the database and synced live across everyone.
             </p>
           </div>
           <div className="flex gap-2">
