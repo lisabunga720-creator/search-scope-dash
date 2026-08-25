@@ -248,13 +248,13 @@ function Dashboard() {
                 />
                 <Stat
                   icon={<ShieldAlert className="size-3.5" />}
-                  label="Spam score"
-                  value={`${current.spamScore}%`}
+                  label="Dofollow links"
+                  value={nf.format(current.dofollowBacklinks)}
                 />
                 <Stat
                   icon={<TrendingUp className="size-3.5" />}
-                  label="Keywords"
-                  value={nf.format(current.organicKeywords)}
+                  label="Dofollow refs"
+                  value={nf.format(current.dofollowRefDomains)}
                 />
               </div>
             </div>
