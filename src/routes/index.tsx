@@ -318,10 +318,11 @@ function Dashboard() {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => setHistory([])}
-              disabled={history.length === 0}
+              onClick={() => clearMutation.mutate()}
+              disabled={history.length === 0 || clearMutation.isPending}
               className="rounded-xl"
             >
+
               <Trash2 className="size-4" />
               Clear
             </Button>
