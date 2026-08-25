@@ -334,7 +334,7 @@ function Dashboard() {
                         {nf.format(row.referringDomains)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-muted-foreground">
-                        {row.spamScore}%
+                        {nf.format(row.dofollowBacklinks)}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {new Date(row.checkedAt).toLocaleTimeString()}
