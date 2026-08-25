@@ -92,6 +92,10 @@ function Dashboard() {
   const mutation = useMutation({
     mutationFn: (value: string) => check({ data: { domain: value } }),
     onSuccess: (result) => {
+      if ("error" in result) {
+        setError(result.error);
+        return;
+      }
       setCurrent(result);
       setHistory((prev) => [result, ...prev.filter((r) => r.domain !== result.domain)].slice(0, 50));
       setError(null);
