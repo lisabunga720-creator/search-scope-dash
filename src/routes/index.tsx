@@ -20,6 +20,8 @@ import {
 } from "@/lib/history.functions";
 
 import { AuditSnapshot } from "@/components/AuditSnapshot";
+import { KeywordOpportunities } from "@/components/KeywordOpportunities";
+import { TechnicalAudit } from "@/components/TechnicalAudit";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -211,6 +213,8 @@ function Dashboard() {
         </div>
       </header>
       <AuditSnapshot />
+      <TechnicalAudit />
+      <KeywordOpportunities />
 
       <section className="panel mt-6 rounded-2xl p-5 md:p-6">
         <form onSubmit={submit} className="flex flex-col gap-3 md:flex-row md:items-center">
