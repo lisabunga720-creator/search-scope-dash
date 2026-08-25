@@ -14,7 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      domain_checks: {
+        Row: {
+          backlinks: number
+          checked_at: string
+          created_at: string
+          dofollow_backlinks: number
+          dofollow_ref_domains: number
+          domain: string
+          domain_authority: number
+          id: string
+          referring_domains: number
+          updated_at: string
+        }
+        Insert: {
+          backlinks?: number
+          checked_at?: string
+          created_at?: string
+          dofollow_backlinks?: number
+          dofollow_ref_domains?: number
+          domain: string
+          domain_authority?: number
+          id?: string
+          referring_domains?: number
+          updated_at?: string
+        }
+        Update: {
+          backlinks?: number
+          checked_at?: string
+          created_at?: string
+          dofollow_backlinks?: number
+          dofollow_ref_domains?: number
+          domain?: string
+          domain_authority?: number
+          id?: string
+          referring_domains?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

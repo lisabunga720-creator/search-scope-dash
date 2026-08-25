@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useServerFn } from "@tanstack/react-start";
-import { useMutation } from "@tanstack/react-query";
-import { useState } from "react";
+import { useMutation, useQuery, useQueryClient, queryOptions } from "@tanstack/react-query";
+import { useEffect, useState } from "react";
 import {
   ArrowUpRight,
   Download,
@@ -13,6 +13,12 @@ import {
 } from "lucide-react";
 
 import { checkDomainMetrics, type DomainMetrics } from "@/lib/metrics.functions";
+import {
+  clearDomainChecks,
+  listDomainChecks,
+  saveDomainCheck,
+} from "@/lib/history.functions";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -25,7 +31,14 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
+const historyQueryOptions = queryOptions({
+  queryKey: ["domain-checks"],
+  queryFn: () => listDomainChecks(),
+});
+
+
 export const Route = createFileRoute("/")({
+  loader: ({ context }) => context.queryClient.ensureQueryData(historyQueryOptions),
   head: () => ({
     meta: [
       { title: "Backlink Research Dashboard | Domain Authority Checker" },
@@ -86,22 +99,54 @@ function Dashboard() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<DomainMetrics | null>(null);
-  const [history, setHistory] = useState<DomainMetrics[]>([]);
+
+  const queryClient = useQueryClient();
+  const { data: history = [] } = useQuery(historyQueryOptions);
 
   const check = useServerFn(checkDomainMetrics);
+  const save = useServerFn(saveDomainCheck);
+  const clearAll = useServerFn(clearDomainChecks);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("domain-checks-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "domain_checks" },
+        () => queryClient.invalidateQueries({ queryKey: ["domain-checks"] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const mutation = useMutation({
-    mutationFn: (value: string) => check({ data: { domain: value } }),
+    mutationFn: async (value: string) => {
+      const result = await check({ data: { domain: value } });
+      if (!("error" in result)) await save({ data: result });
+      return result;
+    },
     onSuccess: (result) => {
       if ("error" in result) {
         setError(result.error);
         return;
       }
       setCurrent(result);
-      setHistory((prev) => [result, ...prev.filter((r) => r.domain !== result.domain)].slice(0, 50));
       setError(null);
+      void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
     onError: () => setError("That doesn't look like a valid domain. Try example.com"),
   });
+
+  const clearMutation = useMutation({
+    mutationFn: () => clearAll(),
+    onSuccess: () => {
+      setCurrent(null);
+      void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
+    },
+  });
+
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -165,7 +210,7 @@ function Dashboard() {
         <div className="text-right">
           <p className="font-mono text-3xl font-semibold">{history.length}</p>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            domains this session
+            domains saved
           </p>
         </div>
       </header>
@@ -265,18 +310,19 @@ function Dashboard() {
       <section className="panel mt-6 rounded-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 md:px-6">
           <div>
-            <h2 className="text-lg font-semibold">Session history</h2>
+            <h2 className="text-lg font-semibold">Saved history</h2>
             <p className="text-xs text-muted-foreground">
-              Every domain checked in this session, newest first.
+              Every domain checked, stored in the database and synced live across everyone.
             </p>
           </div>
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => setHistory([])}
-              disabled={history.length === 0}
+              onClick={() => clearMutation.mutate()}
+              disabled={history.length === 0 || clearMutation.isPending}
               className="rounded-xl"
             >
+
               <Trash2 className="size-4" />
               Clear
             </Button>
