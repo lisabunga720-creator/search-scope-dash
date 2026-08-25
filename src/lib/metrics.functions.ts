@@ -32,7 +32,7 @@ export const checkDomainMetrics = createServerFn({ method: "POST" })
       })
       .parse(data),
   )
-  .handler(async ({ data }): Promise<DomainMetrics> => {
+  .handler(async ({ data }): Promise<DomainMetrics | { error: string }> => {
     // Panggil Supabase Edge Function yang sudah Anda deploy ke project tzbcvsbzoyexslhisovk
     const response = await fetch("https://tzbcvsbzoyexslhisovk.supabase.co/functions/v1/check-da", {
       method: "POST",
