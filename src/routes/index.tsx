@@ -306,7 +306,7 @@ function Dashboard() {
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Backlinks</TableHead>
                   <TableHead className="text-right">Ref. domains</TableHead>
-                  <TableHead className="text-right">Spam</TableHead>
+                  <TableHead className="text-right">Dofollow</TableHead>
                   <TableHead className="text-right">Checked</TableHead>
                 </TableRow>
               </TableHeader>
