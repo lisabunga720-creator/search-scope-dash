@@ -11,6 +11,8 @@ export type DomainMetrics = {
   checkedAt: string;
 };
 
+export type MetricsResult = DomainMetrics | { error: string };
+
 export const checkDomainMetrics = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
     z
