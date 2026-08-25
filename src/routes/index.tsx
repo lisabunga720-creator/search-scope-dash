@@ -110,18 +110,12 @@ function Dashboard() {
   const clearAll = useServerFn(clearDomainChecks);
 
   useEffect(() => {
-    const channel = supabase
-      .channel("domain-checks-sync")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "domain_checks" },
-        () => queryClient.invalidateQueries({ queryKey: ["domain-checks"] }),
-      )
-      .subscribe();
-    return () => {
-      void supabase.removeChannel(channel);
-    };
+    const interval = window.setInterval(() => {
+      void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
+    }, 15000);
+    return () => window.clearInterval(interval);
   }, [queryClient]);
+
 
   const mutation = useMutation({
     mutationFn: async (value: string) => {
