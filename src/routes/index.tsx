@@ -216,9 +216,11 @@ function Dashboard() {
           </p>
         </div>
       </header>
+      <AuditSnapshot />
 
-      <section className="panel mt-10 rounded-2xl p-5 md:p-6">
+      <section className="panel mt-6 rounded-2xl p-5 md:p-6">
         <form onSubmit={submit} className="flex flex-col gap-3 md:flex-row md:items-center">
+
           <div className="relative flex-1">
             <Search className="pointer-events-none absolute left-4 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
             <Input
