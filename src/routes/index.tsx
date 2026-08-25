@@ -210,7 +210,7 @@ function Dashboard() {
         <div className="text-right">
           <p className="font-mono text-3xl font-semibold">{history.length}</p>
           <p className="text-xs uppercase tracking-widest text-muted-foreground">
-            domains this session
+            domains saved
           </p>
         </div>
       </header>
