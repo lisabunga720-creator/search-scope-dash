@@ -99,22 +99,54 @@ function Dashboard() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<DomainMetrics | null>(null);
-  const [history, setHistory] = useState<DomainMetrics[]>([]);
+
+  const queryClient = useQueryClient();
+  const { data: history = [] } = useQuery(historyQueryOptions);
 
   const check = useServerFn(checkDomainMetrics);
+  const save = useServerFn(saveDomainCheck);
+  const clearAll = useServerFn(clearDomainChecks);
+
+  useEffect(() => {
+    const channel = supabase
+      .channel("domain-checks-sync")
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "domain_checks" },
+        () => queryClient.invalidateQueries({ queryKey: ["domain-checks"] }),
+      )
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const mutation = useMutation({
-    mutationFn: (value: string) => check({ data: { domain: value } }),
+    mutationFn: async (value: string) => {
+      const result = await check({ data: { domain: value } });
+      if (!("error" in result)) await save({ data: result });
+      return result;
+    },
     onSuccess: (result) => {
       if ("error" in result) {
         setError(result.error);
         return;
       }
       setCurrent(result);
-      setHistory((prev) => [result, ...prev.filter((r) => r.domain !== result.domain)].slice(0, 50));
       setError(null);
+      void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
     onError: () => setError("That doesn't look like a valid domain. Try example.com"),
   });
+
+  const clearMutation = useMutation({
+    mutationFn: () => clearAll(),
+    onSuccess: () => {
+      setCurrent(null);
+      void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
+    },
+  });
+
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
