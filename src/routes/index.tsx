@@ -119,8 +119,8 @@ function Dashboard() {
       "Status",
       "Backlinks",
       "Referring Domains",
-      "Spam Score",
-      "Organic Keywords",
+      "Dofollow Backlinks",
+      "Dofollow Referring Domains",
       "Checked At",
     ];
     const rows = history.map((r) => [
