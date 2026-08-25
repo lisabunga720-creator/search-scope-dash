@@ -18,7 +18,7 @@ import {
   listDomainChecks,
   saveDomainCheck,
 } from "@/lib/history.functions";
-import { supabase } from "@/integrations/supabase/client";
+
 import { AuditSnapshot } from "@/components/AuditSnapshot";
 
 import { Button } from "@/components/ui/button";
