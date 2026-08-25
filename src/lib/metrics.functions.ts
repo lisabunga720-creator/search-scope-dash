@@ -6,12 +6,15 @@ export type DomainMetrics = {
   domainAuthority: number;
   backlinks: number;
   referringDomains: number;
-  spamScore: number;
-  organicKeywords: number;
+  dofollowBacklinks: number;
+  dofollowRefDomains: number;
   checkedAt: string;
 };
 
 export type MetricsResult = DomainMetrics | { error: string };
+
+const GATEWAY_URL = "https://connector-gateway.lovable.dev/apify";
+const ACTOR_ID = "kinaesthetic_millionaire~ahref-website-authority-checker";
 
 export const checkDomainMetrics = createServerFn({ method: "POST" })
   .inputValidator((data: unknown) =>
@@ -35,64 +38,72 @@ export const checkDomainMetrics = createServerFn({ method: "POST" })
       .parse(data),
   )
   .handler(async ({ data }): Promise<MetricsResult> => {
-    const basicAuth = process.env["MOZ_BASIC_AUTH"];
-    if (!basicAuth) {
-      return { error: "Moz API credentials are not configured on the server." };
+    const lovableApiKey = process.env["LOVABLE_API_KEY"];
+    const apifyKey = process.env["APIFY_API_KEY"];
+    if (!lovableApiKey || !apifyKey) {
+      return { error: "The Apify connection isn't configured on the server yet." };
     }
 
     let response: Response;
     try {
-      response = await fetch("https://lsapi.seomoz.com/v2/url_metrics", {
-        method: "POST",
-        headers: {
-          Authorization: `Basic ${basicAuth}`,
-          "Content-Type": "application/json",
+      response = await fetch(
+        `${GATEWAY_URL}/acts/${ACTOR_ID}/run-sync-get-dataset-items?timeout=120`,
+        {
+          method: "POST",
+          headers: {
+            Authorization: `Bearer ${lovableApiKey}`,
+            "X-Connection-Api-Key": apifyKey,
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ start_urls: [{ url: `https://${data.domain}` }] }),
         },
-        body: JSON.stringify({ targets: [data.domain] }),
-      });
+      );
     } catch {
       return { error: "Couldn't reach the metrics service. Please try again." };
     }
 
     const raw = await response.text();
-    let payload: {
-      results?: Array<{
-        domain_authority?: number;
-        external_pages_to_root_domain?: number;
-        root_domains_to_root_domain?: number;
-        spam_score?: number;
-      }>;
-      error?: string;
-    } = {};
-    try {
-      payload = JSON.parse(raw) as typeof payload;
-    } catch {
-      /* non-JSON response */
-    }
 
     if (!response.ok) {
-      const message = String(payload.error ?? raw);
-      if (/quota/i.test(message)) {
-        return {
-          error:
-            "The Moz API quota for this billing period is used up, so live domain metrics are unavailable right now. It resets next period, or upgrade the Moz plan for more lookups.",
-        };
-      }
+      console.error(`Apify gateway request failed [${response.status}]: ${raw}`);
       if (response.status === 401 || response.status === 403) {
-        return { error: "Moz rejected the API credentials. Please double-check the keys." };
+        return { error: "Apify rejected the request — the connection needs to be re-authorized." };
       }
-      return { error: "Couldn't fetch domain metrics from the provider. Please try again later." };
+      if (response.status === 402) {
+        return { error: "The Apify account is out of credit for this Actor run." };
+      }
+      if (response.status === 429) {
+        return { error: "Apify is rate limiting requests right now. Try again in a moment." };
+      }
+      return { error: `Couldn't fetch domain metrics [${response.status}]. Please try again later.` };
     }
 
-    const item = payload.results?.[0] ?? {};
+    let items: Array<{
+      domainRating?: number;
+      backlinks?: number;
+      refdomains?: number;
+      dofollowBacklinks?: number;
+      dofollowRefdomains?: number;
+    }> = [];
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) items = parsed;
+    } catch {
+      return { error: "The metrics service returned an unexpected response." };
+    }
+
+    const item = items[0];
+    if (!item) {
+      return { error: `No authority data came back for ${data.domain}.` };
+    }
 
     return {
       domain: data.domain,
-      domainAuthority: item.domain_authority ?? 0,
-      backlinks: item.external_pages_to_root_domain ?? 0,
-      referringDomains: item.root_domains_to_root_domain ?? 0,
-      spamScore: item.spam_score ?? 0,
-      organicKeywords: 0,
+      domainAuthority: item.domainRating ?? 0,
+      backlinks: item.backlinks ?? 0,
+      referringDomains: item.refdomains ?? 0,
+      dofollowBacklinks: item.dofollowBacklinks ?? 0,
+      dofollowRefDomains: item.dofollowRefdomains ?? 0,
       checkedAt: new Date().toISOString(),
     };
   });

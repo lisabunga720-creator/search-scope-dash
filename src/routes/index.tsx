@@ -119,8 +119,8 @@ function Dashboard() {
       "Status",
       "Backlinks",
       "Referring Domains",
-      "Spam Score",
-      "Organic Keywords",
+      "Dofollow Backlinks",
+      "Dofollow Referring Domains",
       "Checked At",
     ];
     const rows = history.map((r) => [
@@ -129,8 +129,8 @@ function Dashboard() {
       tierFor(r.domainAuthority).label,
       r.backlinks,
       r.referringDomains,
-      `${r.spamScore}%`,
-      r.organicKeywords,
+      r.dofollowBacklinks,
+      r.dofollowRefDomains,
       new Date(r.checkedAt).toISOString(),
     ]);
     const csv = [header, ...rows]
@@ -248,13 +248,13 @@ function Dashboard() {
                 />
                 <Stat
                   icon={<ShieldAlert className="size-3.5" />}
-                  label="Spam score"
-                  value={`${current.spamScore}%`}
+                  label="Dofollow links"
+                  value={nf.format(current.dofollowBacklinks)}
                 />
                 <Stat
                   icon={<TrendingUp className="size-3.5" />}
-                  label="Keywords"
-                  value={nf.format(current.organicKeywords)}
+                  label="Dofollow refs"
+                  value={nf.format(current.dofollowRefDomains)}
                 />
               </div>
             </div>
@@ -306,7 +306,7 @@ function Dashboard() {
                   <TableHead>Status</TableHead>
                   <TableHead className="text-right">Backlinks</TableHead>
                   <TableHead className="text-right">Ref. domains</TableHead>
-                  <TableHead className="text-right">Spam</TableHead>
+                  <TableHead className="text-right">Dofollow</TableHead>
                   <TableHead className="text-right">Checked</TableHead>
                 </TableRow>
               </TableHeader>
@@ -334,7 +334,7 @@ function Dashboard() {
                         {nf.format(row.referringDomains)}
                       </TableCell>
                       <TableCell className="text-right font-mono text-muted-foreground">
-                        {row.spamScore}%
+                        {nf.format(row.dofollowBacklinks)}
                       </TableCell>
                       <TableCell className="text-right text-muted-foreground">
                         {new Date(row.checkedAt).toLocaleTimeString()}
