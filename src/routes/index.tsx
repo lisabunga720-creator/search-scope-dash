@@ -129,8 +129,8 @@ function Dashboard() {
       tierFor(r.domainAuthority).label,
       r.backlinks,
       r.referringDomains,
-      `${r.spamScore}%`,
-      r.organicKeywords,
+      r.dofollowBacklinks,
+      r.dofollowRefDomains,
       new Date(r.checkedAt).toISOString(),
     ]);
     const csv = [header, ...rows]
