@@ -68,7 +68,7 @@ export const checkDomainMetrics = createServerFn({ method: "POST" })
 
     // Mengembalikan data hasil nyata dari Moz API melalui Supabase Edge Function
     return {
-      domain: result.domain,
+      domain: result.domain ?? data.domain,
       domainAuthority: result.da ?? 0,
       backlinks: 0,         // Placeholder jika API Moz v2 tidak mengembalikan field ini secara langsung
       referringDomains: 0,  // Placeholder
