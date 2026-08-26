@@ -173,8 +173,12 @@ function Dashboard() {
       setError("Enter a domain to check.");
       return;
     }
+    setError(null);
+    setTraffic(null);
     mutation.mutate(domain.trim());
+    trafficMutation.mutate(domain.trim());
   }
+
 
   function exportCsv() {
     const header = [
