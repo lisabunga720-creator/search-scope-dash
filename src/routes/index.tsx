@@ -124,28 +124,37 @@ function Dashboard() {
   }, [queryClient]);
 
 
+  const trafficMutation = useMutation({
+    mutationFn: (value: string) => checkTraffic({ data: { domain: value } }),
+    onSuccess: (result) => {
+      if ("error" in result) {
+        setTraffic(null);
+        setError(result.error);
+        return;
+      }
+      setTraffic(result);
+    },
+    onError: () => setError("Couldn't fetch traffic data for that domain."),
+  });
+
   const mutation = useMutation({
     mutationFn: async (value: string) => {
-      const [metrics, trafficResult] = await Promise.all([
-        check({ data: { domain: value } }),
-        checkTraffic({ data: { domain: value } }),
-      ]);
+      const metrics = await check({ data: { domain: value } });
       if (!("error" in metrics)) await save({ data: metrics });
-      return { metrics, trafficResult };
+      return metrics;
     },
-    onSuccess: ({ metrics, trafficResult }) => {
-      setTraffic("error" in trafficResult ? null : trafficResult);
-      if (!("error" in metrics)) setCurrent(metrics);
-
-      if ("error" in metrics && "error" in trafficResult) {
-        setError(trafficResult.error);
-      } else {
-        setError("error" in trafficResult ? trafficResult.error : null);
+    onSuccess: (result) => {
+      if ("error" in result) {
+        setError(result.error);
+        return;
       }
+      setCurrent(result);
+      setError(null);
       void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
     onError: () => setError("That doesn't look like a valid domain. Try example.com"),
   });
+
 
   const clearMutation = useMutation({
     mutationFn: () => clearAll(),
