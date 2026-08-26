@@ -321,6 +321,10 @@ function Dashboard() {
         </section>
       )}
 
+      {traffic && !mutation.isPending && <TrafficCard data={traffic} />}
+
+
+
       <section className="panel mt-6 rounded-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 md:px-6">
           <div>
