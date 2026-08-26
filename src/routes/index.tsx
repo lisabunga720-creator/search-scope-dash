@@ -335,7 +335,26 @@ function Dashboard() {
         </section>
       )}
 
-      {traffic && !mutation.isPending && <TrafficCard data={traffic} />}
+      {trafficMutation.isPending && (
+        <section className="panel mt-6 rounded-2xl p-6">
+          <Skeleton className="h-5 w-64" />
+          <p className="mt-3 text-xs text-muted-foreground">
+            Fetching live traffic panel data — this usually takes a few seconds…
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Skeleton className="h-40 rounded-xl" />
+            <Skeleton className="h-40 rounded-xl" />
+          </div>
+        </section>
+      )}
+
+      {traffic && !trafficMutation.isPending && <TrafficCard data={traffic} />}
+
 
 
 
