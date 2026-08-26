@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { checkDomainMetrics, type DomainMetrics } from "@/lib/metrics.functions";
+import { checkDomainTraffic, type DomainTraffic } from "@/lib/traffic.functions";
 import {
   clearDomainChecks,
   listDomainChecks,
@@ -22,6 +23,8 @@ import {
 import { AuditSnapshot } from "@/components/AuditSnapshot";
 import { KeywordOpportunities } from "@/components/KeywordOpportunities";
 import { TechnicalAudit } from "@/components/TechnicalAudit";
+import { TrafficCard } from "@/components/TrafficCard";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -103,11 +106,13 @@ function Dashboard() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<DomainMetrics | null>(null);
+  const [traffic, setTraffic] = useState<DomainTraffic | null>(null);
 
   const queryClient = useQueryClient();
   const { data: history = [] } = useQuery(historyQueryOptions);
 
   const check = useServerFn(checkDomainMetrics);
+  const checkTraffic = useServerFn(checkDomainTraffic);
   const save = useServerFn(saveDomainCheck);
   const clearAll = useServerFn(clearDomainChecks);
 
@@ -119,11 +124,24 @@ function Dashboard() {
   }, [queryClient]);
 
 
+  const trafficMutation = useMutation({
+    mutationFn: (value: string) => checkTraffic({ data: { domain: value } }),
+    onSuccess: (result) => {
+      if ("error" in result) {
+        setTraffic(null);
+        setError(result.error);
+        return;
+      }
+      setTraffic(result);
+    },
+    onError: () => setError("Couldn't fetch traffic data for that domain."),
+  });
+
   const mutation = useMutation({
     mutationFn: async (value: string) => {
-      const result = await check({ data: { domain: value } });
-      if (!("error" in result)) await save({ data: result });
-      return result;
+      const metrics = await check({ data: { domain: value } });
+      if (!("error" in metrics)) await save({ data: metrics });
+      return metrics;
     },
     onSuccess: (result) => {
       if ("error" in result) {
@@ -137,13 +155,16 @@ function Dashboard() {
     onError: () => setError("That doesn't look like a valid domain. Try example.com"),
   });
 
+
   const clearMutation = useMutation({
     mutationFn: () => clearAll(),
     onSuccess: () => {
       setCurrent(null);
+      setTraffic(null);
       void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
   });
+
 
 
   function submit(e: React.FormEvent) {
@@ -152,8 +173,12 @@ function Dashboard() {
       setError("Enter a domain to check.");
       return;
     }
+    setError(null);
+    setTraffic(null);
     mutation.mutate(domain.trim());
+    trafficMutation.mutate(domain.trim());
   }
+
 
   function exportCsv() {
     const header = [
@@ -231,11 +256,12 @@ function Dashboard() {
           </div>
           <Button
             type="submit"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || trafficMutation.isPending}
             className="h-13 rounded-xl px-7 text-sm font-semibold shadow-[var(--shadow-glow)]"
           >
-            {mutation.isPending ? "Checking…" : "Check Metrics"}
+            {mutation.isPending || trafficMutation.isPending ? "Checking…" : "Check Metrics"}
           </Button>
+
         </form>
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       </section>
@@ -308,6 +334,29 @@ function Dashboard() {
           </div>
         </section>
       )}
+
+      {trafficMutation.isPending && (
+        <section className="panel mt-6 rounded-2xl p-6">
+          <Skeleton className="h-5 w-64" />
+          <p className="mt-3 text-xs text-muted-foreground">
+            Fetching live traffic panel data — this usually takes a few seconds…
+          </p>
+          <div className="mt-5 grid grid-cols-2 gap-3 md:grid-cols-4">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-16 rounded-xl" />
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Skeleton className="h-40 rounded-xl" />
+            <Skeleton className="h-40 rounded-xl" />
+          </div>
+        </section>
+      )}
+
+      {traffic && !trafficMutation.isPending && <TrafficCard data={traffic} />}
+
+
+
 
       <section className="panel mt-6 rounded-2xl">
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border p-5 md:px-6">
