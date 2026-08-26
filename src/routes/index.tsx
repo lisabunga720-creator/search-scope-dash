@@ -106,11 +106,13 @@ function Dashboard() {
   const [domain, setDomain] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [current, setCurrent] = useState<DomainMetrics | null>(null);
+  const [traffic, setTraffic] = useState<DomainTraffic | null>(null);
 
   const queryClient = useQueryClient();
   const { data: history = [] } = useQuery(historyQueryOptions);
 
   const check = useServerFn(checkDomainMetrics);
+  const checkTraffic = useServerFn(checkDomainTraffic);
   const save = useServerFn(saveDomainCheck);
   const clearAll = useServerFn(clearDomainChecks);
 
@@ -124,17 +126,22 @@ function Dashboard() {
 
   const mutation = useMutation({
     mutationFn: async (value: string) => {
-      const result = await check({ data: { domain: value } });
-      if (!("error" in result)) await save({ data: result });
-      return result;
+      const [metrics, trafficResult] = await Promise.all([
+        check({ data: { domain: value } }),
+        checkTraffic({ data: { domain: value } }),
+      ]);
+      if (!("error" in metrics)) await save({ data: metrics });
+      return { metrics, trafficResult };
     },
-    onSuccess: (result) => {
-      if ("error" in result) {
-        setError(result.error);
-        return;
+    onSuccess: ({ metrics, trafficResult }) => {
+      setTraffic("error" in trafficResult ? null : trafficResult);
+      if (!("error" in metrics)) setCurrent(metrics);
+
+      if ("error" in metrics && "error" in trafficResult) {
+        setError(trafficResult.error);
+      } else {
+        setError("error" in trafficResult ? trafficResult.error : null);
       }
-      setCurrent(result);
-      setError(null);
       void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
     onError: () => setError("That doesn't look like a valid domain. Try example.com"),
@@ -144,9 +151,11 @@ function Dashboard() {
     mutationFn: () => clearAll(),
     onSuccess: () => {
       setCurrent(null);
+      setTraffic(null);
       void queryClient.invalidateQueries({ queryKey: ["domain-checks"] });
     },
   });
+
 
 
   function submit(e: React.FormEvent) {
