@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { checkDomainMetrics, type DomainMetrics } from "@/lib/metrics.functions";
+import { checkDomainTraffic, type DomainTraffic } from "@/lib/traffic.functions";
 import {
   clearDomainChecks,
   listDomainChecks,
@@ -22,6 +23,8 @@ import {
 import { AuditSnapshot } from "@/components/AuditSnapshot";
 import { KeywordOpportunities } from "@/components/KeywordOpportunities";
 import { TechnicalAudit } from "@/components/TechnicalAudit";
+import { TrafficCard } from "@/components/TrafficCard";
+
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
