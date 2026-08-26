@@ -256,11 +256,12 @@ function Dashboard() {
           </div>
           <Button
             type="submit"
-            disabled={mutation.isPending}
+            disabled={mutation.isPending || trafficMutation.isPending}
             className="h-13 rounded-xl px-7 text-sm font-semibold shadow-[var(--shadow-glow)]"
           >
-            {mutation.isPending ? "Checking…" : "Check Metrics"}
+            {mutation.isPending || trafficMutation.isPending ? "Checking…" : "Check Metrics"}
           </Button>
+
         </form>
         {error && <p className="mt-3 text-sm text-danger">{error}</p>}
       </section>
